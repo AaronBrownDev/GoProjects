@@ -46,14 +46,50 @@ func main() {
 
 	case "list":
 		// Gets all the contacts and the lists them
-		contactRepo.GetAll()
+		contacts, err := contactRepo.GetAll()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println(contacts)
+
 	case "find":
+		// If there are not enough arguments to find a valid Contact then prints instructions then exits program.
+		if len(os.Args) < 3 {
+			fmt.Println("not enough arguments: Usage: go run main.go find <name>")
+			os.Exit(1)
+		}
+
 		// Gets all the contacts with the same name
-		contactRepo.GetByName(os.Args[2])
+		contacts, err := contactRepo.GetByName(os.Args[2])
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(contacts)
+
+	case "show":
+		// converts the argument into an integer
+		contactID, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			fmt.Println("Invalid contactID. contactID has to be a positive integer. Usage: go run main.go delete <contactID>")
+			os.Exit(1)
+		}
+
+		contact, err := contactRepo.GetByID(contactID)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println(contact)
+
 	case "update":
 		// Updates the contact of the same contactID and replaces it with the new contact
-		// TODO: Have to find out how I want to implement this  
+		// TODO: Have to find out how I want to implement this
 		// contactRepo.Update()
+
 	case "delete":
 		// converts the argument into an integer
 		contactID, err := strconv.Atoi(os.Args[2])
@@ -66,14 +102,12 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+
 	case "help":
-		fmt.Println("Operations:\ngo run main.go add <name> <phoneNumber> <emailAddress>\ngo run main.go list\ngo run main.go find <name>\ngo run main.go update\ngo run main.go delete <contactID>")
+		fmt.Println("Operations:\ngo run main.go add <name> <phoneNumber> <emailAddress>\ngo run main.go list\ngo run main.go find <name>\ngo run main.go show <contactID>\ngo run main.go update\ngo run main.go delete <contactID>")
+
 	default:
 		fmt.Println("Invalid operation.")
 	}
 
-
-
-
-	
 }
