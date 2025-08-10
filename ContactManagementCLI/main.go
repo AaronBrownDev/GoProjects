@@ -84,7 +84,7 @@ func main() {
 	case "show":
 		// If there are not enough arguments to show a valid Contact then prints instructions then exits program.
 		if len(os.Args) < 3 {
-			fmt.Println("not enough arguments. Usage: go run main.go find <name>")
+			fmt.Println("not enough arguments. Usage: go run main.go show <contactID>")
 			os.Exit(1)
 		}
 

@@ -42,6 +42,10 @@ func (r *jsonContactRepository) Create(name string, phoneNumber string, emailAdd
 // Delete implements domain.ContactRepository.
 func (r jsonContactRepository) Delete(contactID int) (err error) {
 
+	if len(r.jsonContacts) <= contactID {
+		return fmt.Errorf("invalid contactID: the contactID goes up to %d", len(r.jsonContacts) - 1)
+	}
+
 	r.jsonContacts = append(r.jsonContacts[:contactID], r.jsonContacts[contactID+1:]...)
 
 	updatedBytes, err := json.MarshalIndent(r.jsonContacts, "", " ")
@@ -73,8 +77,8 @@ func (r jsonContactRepository) GetAll() (contacts []domain.Contact, err error) {
 // GetByID implements domain.ContactRepository.
 func (r jsonContactRepository) GetByID(contactID int) (contact domain.Contact, err error) {
 
-	if len(r.jsonContacts) <= contact.ContactID {
-		return domain.Contact{}, fmt.Errorf("invalid contactID: the contactID goes up to %d", contact.ContactID - 1)
+	if len(r.jsonContacts) <= contactID {
+		return domain.Contact{}, fmt.Errorf("invalid contactID: the contactID goes up to %d", len(r.jsonContacts) - 1)
 	}
 
 	return domain.Contact{
@@ -107,7 +111,7 @@ func (r jsonContactRepository) GetByName(name string) (contacts []domain.Contact
 func (r jsonContactRepository) Update(contact domain.Contact) (err error) {
 
 	if len(r.jsonContacts) <= contact.ContactID {
-		return fmt.Errorf("invalid contactID: the contactID goes up to %d", contact.ContactID - 1)
+		return fmt.Errorf("invalid contactID: the contactID goes up to %d", len(r.jsonContacts) - 1)
 	}
 
 	r.jsonContacts[contact.ContactID]["name"] = contact.Name
