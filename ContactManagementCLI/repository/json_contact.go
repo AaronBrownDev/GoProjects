@@ -2,26 +2,22 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/AaronBrownDev/ContactManagementCLI/domain"
 )
 
 type jsonContactRepository struct {
-	content []byte
+	jsonContacts []map[string]string
 }
 
-func GetJsonContactRepository(content []byte) domain.ContactRepository {
-	return &jsonContactRepository{content: content}
+func GetJsonContactRepository(jsonContacts []map[string]string) domain.ContactRepository {
+	return &jsonContactRepository{jsonContacts: jsonContacts}
 }
 
 // Create implements domain.ContactRepository.
 func (r *jsonContactRepository) Create(name string, phoneNumber string, emailAddress string) (err error) {
-	var jsonContacts []map[string]string
-	err = json.Unmarshal(r.content, &jsonContacts)
-	if err != nil {
-		return err
-	}
 
 	newContact := map[string]string{
 		"name":         name,
@@ -29,9 +25,9 @@ func (r *jsonContactRepository) Create(name string, phoneNumber string, emailAdd
 		"emailAddress": emailAddress,
 	}
 
-	jsonContacts = append(jsonContacts, newContact)
+	r.jsonContacts = append(r.jsonContacts, newContact)
 
-	updatedBytes, err := json.MarshalIndent(jsonContacts, "", " ")
+	updatedBytes, err := json.MarshalIndent(r.jsonContacts, "", " ")
 	if err != nil {
 		return err
 	}
@@ -44,15 +40,26 @@ func (r *jsonContactRepository) Create(name string, phoneNumber string, emailAdd
 }
 
 // Delete implements domain.ContactRepository.
-func (r jsonContactRepository) Delete(contactID int) error {
-	panic("unimplemented")
+func (r jsonContactRepository) Delete(contactID int) (err error) {
+
+	r.jsonContacts = append(r.jsonContacts[:contactID], r.jsonContacts[contactID+1:]...)
+
+	updatedBytes, err := json.MarshalIndent(r.jsonContacts, "", " ")
+	if err != nil {
+		return err
+	}
+
+	if err = os.WriteFile("contacts.json", updatedBytes, 0644); err != nil {
+		return err
+	}
+
+	return
 }
 
 // GetAll implements domain.ContactRepository.
 func (r jsonContactRepository) GetAll() (contacts []domain.Contact, err error) {
-	var jsonContacts []map[string]string
-	err = json.Unmarshal(r.content, &jsonContacts)
-	for i, jsonContact := range jsonContacts {
+
+	for i, jsonContact := range r.jsonContacts {
 		contacts = append(contacts, domain.Contact{
 			ContactID:    i,
 			Name:         jsonContact["name"],
@@ -65,22 +72,23 @@ func (r jsonContactRepository) GetAll() (contacts []domain.Contact, err error) {
 
 // GetByID implements domain.ContactRepository.
 func (r jsonContactRepository) GetByID(contactID int) (contact domain.Contact, err error) {
-	var jsonContacts []map[string]string
-	err = json.Unmarshal(r.content, &jsonContacts)
+
+	if len(r.jsonContacts) <= contact.ContactID {
+		return domain.Contact{}, fmt.Errorf("invalid contactID: the contactID goes up to %d", contact.ContactID - 1)
+	}
 
 	return domain.Contact{
 		ContactID:    contactID,
-		Name:         jsonContacts[contactID]["name"],
-		PhoneNumber:  jsonContacts[contactID]["phoneNumber"],
-		EmailAddress: jsonContacts[contactID]["emailAddress"],
+		Name:         r.jsonContacts[contactID]["name"],
+		PhoneNumber:  r.jsonContacts[contactID]["phoneNumber"],
+		EmailAddress: r.jsonContacts[contactID]["emailAddress"],
 	}, err
 }
 
 // GetByName implements domain.ContactRepository.
 func (r jsonContactRepository) GetByName(name string) (contacts []domain.Contact, err error) {
-	var jsonContacts []map[string]string
-	err = json.Unmarshal(r.content, &jsonContacts)
-	for i, jsonContact := range jsonContacts {
+
+	for i, jsonContact := range r.jsonContacts {
 
 		if jsonContact["name"] == name {
 			contacts = append(contacts, domain.Contact{
@@ -96,6 +104,24 @@ func (r jsonContactRepository) GetByName(name string) (contacts []domain.Contact
 }
 
 // Update implements domain.ContactRepository.
-func (r jsonContactRepository) Update(contact domain.Contact) error {
-	panic("unimplemented")
+func (r jsonContactRepository) Update(contact domain.Contact) (err error) {
+
+	if len(r.jsonContacts) <= contact.ContactID {
+		return fmt.Errorf("invalid contactID: the contactID goes up to %d", contact.ContactID - 1)
+	}
+
+	r.jsonContacts[contact.ContactID]["name"] = contact.Name
+	r.jsonContacts[contact.ContactID]["phoneNumber"] = contact.PhoneNumber
+	r.jsonContacts[contact.ContactID]["emailAddress"] = contact.EmailAddress
+
+	updatedBytes, err := json.MarshalIndent(r.jsonContacts, "", " ")
+	if err != nil {
+		return err
+	}
+
+	if err = os.WriteFile("contacts.json", updatedBytes, 0644); err != nil {
+		return err
+	}
+
+	return
 }
